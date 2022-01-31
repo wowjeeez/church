@@ -27,7 +27,7 @@ export function useStateEffect<T extends State, K extends keyof T>(handler: (sta
         const isCyclic = handlerSrc.includes("useServerState") || handlerSrc.includes("updateServerState")
         if (isCyclic) {
             const stack = getCallSites(new Error("foo"))[0]
-            log({location: "internal", level: "error", async: true}, `WARNING: In ${stack.getFileName().replace(cwd, "").replace("\\", "/")}:${stack.getLineNumber()} You are calling \`useServerState\` or \`updateServerState\` inside a useStateEffect, this could lead to bad things like stack overflows or crashes.`)
+            log({location: "internal/state", level: "error", async: true}, `WARNING: In ${stack.getFileName().replace(cwd, "").replace("\\", "/")}:${stack.getLineNumber()} You are calling \`useServerState\` or \`updateServerState\` inside a useStateEffect, this could lead to bad things like stack overflows or crashes.`)
         }
     }
     // @church(cfg(!dev)): ignore-end

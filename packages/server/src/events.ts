@@ -56,7 +56,7 @@ export function useNetEvent<T extends unknown>(eventName: string, handler: (stat
     const wrappedState = (src: number): State => ({
         attach: (key: string, value: any) => {
             handlersWithState[eventName].state[key] = value
-            handlersWithState[eventName].stateListeners.filter(val => !val.onKeys || val.onKeys.includes(key)).map(v => v.handler(key, value))
+            handlersWithState[eventName].stateListeners.filter(val => !val.onKeys.length || val.onKeys.includes(key)).map(v => v.handler(key, value))
         },
         onChange: (handler: Function, onKeys: string[] = []) => handlersWithState[eventName].stateListeners.push({handler, onKeys}),
         getVal: <T>(key: string) => handlersWithState[eventName].state[key] as T,
