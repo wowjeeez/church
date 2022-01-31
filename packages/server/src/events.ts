@@ -40,5 +40,6 @@ export function useNetEvent<T extends unknown, R extends void = void>(eventName:
         handlersWithState[eventName].registeredListenerRef = handler
         onNet(eventName, handler)
     }
-    return () => unregisterEventHandler(eventName, handlersWithState[eventName].handlers.push(handler))
+    const idx = handlersWithState[eventName].handlers.push(handler)
+    return () => unregisterEventHandler(eventName, idx)
 }
