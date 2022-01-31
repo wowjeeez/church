@@ -1,0 +1,9 @@
+{
+"srcDir": "test",
+"context": "server",
+"asyncLogging": true,
+"outDir": "rdist",
+"entry": "deeper/hello.ts",
+"type": "core",
+"importLogs": true
+}
