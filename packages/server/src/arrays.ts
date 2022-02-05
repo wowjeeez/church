@@ -1,7 +1,9 @@
-import {klona} from "klona";
+import {klona} from "klona/full";
 
 type Falsy = false | 0 | "" | null | undefined
 type Truthy = number | true | any[] | {} | any
+
+
 
 const falsyArr = [false, 0, "", null,undefined]
 
@@ -64,10 +66,6 @@ export default function useArray<T extends ReadonlyArray<unknown>>(arr: T) {
                     await fn(v, i as unknown as number, arr)
                 }
             },
-            /**
-             * Alias for iter()
-             */
-            forEach: this.iter,
             filter: async (fn: (v: T[number], k: number, arr: T) => Promise<Falsy | Truthy> | Falsy | Truthy) => {
                 const res: T[number][] = []
                 for (const i in arr) {
@@ -88,6 +86,43 @@ export default function useArray<T extends ReadonlyArray<unknown>>(arr: T) {
                     }
                 }
                 return -1
-            }
+            },
+            /**
+             * Groups an array by the specified keys. Every key has to be equal in order to be put into a group, if even 1 value is different, a new group will be created.
+             * @param keys: string[]
+             * @param functionArgMap: Record<string, any[]>, Arguments to pass to the functions in keys
+             * @return Object keyed with JSON serialized values of the key results
+             */
+            groupBy: <K extends ReadonlyArray<keyof T[number]>, FnArgs>(keys: K, functionArgMap: Partial<Record<K[number], any[]>> = {}) => {
+                const map = new Map<string, any>()
+                for (const v of arr) {
+                    const results = []
+                        for (const key of keys) {
+                            if (typeof v[key] == "function") {
+                                const args = functionArgMap[key] || []
+                                // @ts-ignore
+                                const ret = v[key](...args)
+                                results.push(ret)
+                            }  else {
+                                results.push(v[key])
+                            }
+                        }
+                        const jsonStr = JSON.stringify(results)
+                        const curr: any[] = map.get(jsonStr) || []
+                        map.set(jsonStr, curr)
+                }
+                const returnObj: Record<string, T[number][]> = {}
+                map.forEach((val, key) => {
+                    returnObj[key] = val
+                })
+                return returnObj
+            },
+            /**
+             * Returns a reference to the original array
+             */
+            inner: () => arr
         }
 }
+
+
+

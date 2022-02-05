@@ -1,7 +1,6 @@
 import log from "./logger"
-import {newRef} from "./utils";
 const fibers: Record<string, Fiber<any>> = {}
-
+import {klona} from "klona/full";
 
 
 class _Fiber {
@@ -12,7 +11,7 @@ class _Fiber {
     public setVal(key: string, value: any) {
         this.store[key] = value
         if (this.snapshot) {
-            this.snapshots.push(newRef(this.store))
+            this.snapshots.push(klona(this.store))
         }
         this.getActivatedListeners(key).map(val => val.handler(key, val))
     }

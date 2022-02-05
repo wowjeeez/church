@@ -1,3 +1,5 @@
+import {test} from "./test";
+
 const cwd = process.cwd()
 export default cwd
 export const isDev = !!process.env.DEV
@@ -11,3 +13,4 @@ declare function trace(...msg: unknown[]): void
 declare function info(...msg: unknown[]): void
 declare function silly(...msg: unknown[]): void
 declare function error(...msg: unknown[]): void
+test()
