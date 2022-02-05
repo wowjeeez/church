@@ -1,4 +1,5 @@
 /* Based on https://github.com/watson/error-callsites */
+
 const callsitesSym: symbol = Symbol("callsites");
 export { callsitesSym };
 
@@ -80,4 +81,34 @@ Object.defineProperty(Error, "prepareStackTrace", {
 export function getCallSites(err: Error): NodeJS.CallSite[] {
     // @ts-ignore
     return (err.stack ? err[callsitesSym] : err[callsitesSym]) || [];
+}
+
+export function newRef<T extends any>(obj: T): T {
+    let newObj;
+
+    // To copy something that is not an object, just return it:
+    if(typeof obj !== 'object' && typeof obj !== 'function' || obj == null)
+        return obj;
+
+    if(typeof obj === 'object') {
+        newObj = {}
+        const proto = Object.getPrototypeOf(obj)
+        Object.setPrototypeOf(newObj, proto)
+    } else {
+        let aux
+        newObj = eval('aux='+obj.toString()) //huge security vulnerability, should be fixed
+        newObj.prototype = (obj as any).prototype
+    }
+
+    for(const i in obj) {
+        if(obj.hasOwnProperty(i)) {
+
+            if(typeof obj[i] !== 'object')
+                newObj[i] = obj[i]
+            else
+                newObj[i] = newRef(obj[i])
+        }
+    }
+
+    return newObj;
 }
