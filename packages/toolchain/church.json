@@ -1,5 +1,6 @@
 {
   "src": "test",
   "entry": "index.ts",
-  "context": "server"
+  "context": "server",
+  "project": "Test Church project"
 }

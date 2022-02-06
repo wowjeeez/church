@@ -57,15 +57,17 @@ for cmd in COMMANDS.iter() {
     println!("{}", format!("\t{} - Type {} to show information about the command.", cmd.name.yellow(), format!("{} --help", cmd.name).yellow()))
 }
 }
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Config {
     src: String,
     entry: String,
-    context: String
+    context: String,
+    project: String
 }
 
 pub fn parse_config(p: String) -> Config {
-    let pth = std::path::Path::new(&p);
+    let fmt_pth = format!("{}/{}", std::env::current_dir().unwrap().to_str().unwrap(), &p);
+    let mut pth = std::path::Path::new(&fmt_pth);
     if !pth.exists() {
         println!("{}", format!("{} doesn't exist", p).red());
         exit(0)
