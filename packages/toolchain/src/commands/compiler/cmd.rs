@@ -30,6 +30,7 @@ pub fn compile(cmd: &CmdDescr, args: &CliInp) {
             exit(0)
     }
     let src = SourceFile { name: cf.entry.clone(), path: entry_file, content: entry_f.unwrap() };
-    parse_expr_in_src(&src);
+    let exprs =parse_expr_in_src(&src);
+
 
 }

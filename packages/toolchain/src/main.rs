@@ -67,7 +67,7 @@ pub struct Config {
 
 pub fn parse_config(p: String) -> Config {
     let fmt_pth = format!("{}/{}", std::env::current_dir().unwrap().to_str().unwrap(), &p);
-    let mut pth = std::path::Path::new(&fmt_pth);
+    let pth = std::path::Path::new(&fmt_pth);
     if !pth.exists() {
         println!("{}", format!("{} doesn't exist", p).red());
         exit(0)
