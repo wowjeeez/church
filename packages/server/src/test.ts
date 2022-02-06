@@ -7,6 +7,9 @@ export function test() {
         console.log("HELLO")
         const state = useServerState()
     })
-    console.log(useArray([10, 10]))
+    const a = new Array(61).fill("test")
+    console.log(useArray(a).partition(10, true))
+    console.log("-------")
+    console.log(useArray(a).partition(10, false))
 
 }
