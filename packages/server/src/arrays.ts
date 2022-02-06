@@ -120,7 +120,30 @@ export default function useArray<T extends ReadonlyArray<unknown>>(arr: T) {
             /**
              * Returns a reference to the original array
              */
-            inner: () => arr
+            inner: () => arr,
+            /**
+             * Partitions an array
+             * @param size The partition size
+             * @param dropRemaining Drop the remaining end of the array
+             */
+            partition: (size: number = 10, dropRemaining = false) => {
+                const result: any[] = [];
+
+                for (let i = 0; i < arr.length; i++) {
+                    if (i % size === 0) result.push([]);
+                    result[result.length - 1].push(arr[i]);
+                }
+                if (dropRemaining) {
+                    if (arr.length % size === 0) {
+                        return useArray(result)
+                    } else {
+                        const highestIndex = (Math.min(result.length / size) * size) - 1
+                        return useArray(result.slice(0, highestIndex))
+                    }
+                } else {
+                    return useArray(result);
+                }
+            }
         }
 }
 

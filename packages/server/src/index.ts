@@ -13,4 +13,5 @@ declare function trace(...msg: unknown[]): void
 declare function info(...msg: unknown[]): void
 declare function silly(...msg: unknown[]): void
 declare function error(...msg: unknown[]): void
+//@church-dev 
 test()
