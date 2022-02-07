@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use lazy_static::lazy_static;
 use regex::Regex;
 use crate::commands::compiler::cmd::SourceFile;
@@ -9,14 +10,14 @@ lazy_static! {
 
 
 pub struct FoundExpr<'t> {
-    file: &'t SourceFile,
+    file: SourceFile<'t>,
     line: usize,
     raw_expr: String,
     parsed_expr: String,
     char_idx: usize
 }
 impl<'t> FoundExpr<'t> {
-    pub fn new(file: &SourceFile, line: usize, raw_expr: String, parsed_expr: String, char_idx: usize) -> FoundExpr {
+    pub fn new(file: SourceFile, line: usize, raw_expr: String, parsed_expr: String, char_idx: usize) -> FoundExpr {
         FoundExpr {
             file,
             line,
@@ -37,7 +38,7 @@ impl<'t> FoundExpr<'t> {
         }
     }
     pub fn get_file(self: &'t FoundExpr<'t>) -> &'t SourceFile {
-        self.file
+        &self.file
     }
     pub fn raw_expr(self: &'t FoundExpr<'t>) -> &'t String {
         &self.raw_expr
@@ -53,14 +54,15 @@ impl<'t> FoundExpr<'t> {
     pub fn get_start_char_idx(self: &'t FoundExpr<'t>) -> usize {
         self.char_idx
     }
-    pub fn get_full(self: &'t FoundExpr<'t>) -> String {
+
+    pub fn get_after_char_idx(self: &'t FoundExpr<'t>) -> String {
         self.file.content[self.char_idx..].to_string().trim().to_string()
     }
 
 }
 
 
-pub fn parse_expr_in_src<'t>(file: &'t SourceFile) -> Vec<FoundExpr<'t>> {
+pub fn parse_expr_in_src<'t>(file: &'t mut SourceFile<'t>) -> Vec<FoundExpr<'t>> {
     let mut exprs: Vec<FoundExpr<'t>> = vec![];
     let mut last_char_idx: usize = 0;
     if EXPR_RE.is_match(file.content.as_str()) {
@@ -70,8 +72,10 @@ pub fn parse_expr_in_src<'t>(file: &'t SourceFile) -> Vec<FoundExpr<'t>> {
                     let ent = INNER_RE.captures_iter(ln).next();
                     if ent.is_some() {
                         let expr = ent.as_ref().unwrap()[0].replace("@church-", "");
-                        println!("{}", format!("Found `{}` Church compiler directive in {} at line {}", expr, file.name, idx + 1).yellow());
-                        let parsed = FoundExpr::new(file, idx, ent.unwrap()[0].to_string(), expr.clone(), last_char_idx);
+                        {
+                            println!("{}", format!("Found {} Church compiler directive in {} at line {}", expr.bold().underline(), file.rel_path.to_str().unwrap().replace("\\", "/").bold().underline(), idx + 1).yellow());
+                        }
+                        let parsed = FoundExpr::new(file.clone(), idx, ent.unwrap()[0].to_string(), expr, last_char_idx);
                         exprs.push(parsed);
                     }
                 }
@@ -79,5 +83,5 @@ pub fn parse_expr_in_src<'t>(file: &'t SourceFile) -> Vec<FoundExpr<'t>> {
             last_char_idx += ln.len();
         }
     }
-    return exprs
+    exprs
 }

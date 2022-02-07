@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::ops::Index;
 use std::path::PathBuf;
 
 #[derive(Debug)]
