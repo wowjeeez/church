@@ -15,6 +15,7 @@ lazy_static! {
 lazy_static! {
     static ref HANDLERS: Mutex<HashMap<String, PackedExprHandlerRef>> = Mutex::new(HashMap::new());
     static ref EXPRS: Mutex<Vec<FoundExpr>> = Mutex::new(Vec::new());
+    static ref VALID_EXPRS: Mutex<Vec<String>> = Mutex::new(Vec::new());
 }
 #[derive(Clone)]
 pub struct FoundExpr {
@@ -94,12 +95,17 @@ pub fn parse_expr_in_src(file: SourceFile) {
     let mut mtx = HANDLERS.lock().unwrap();
     let cl_exprs = exprs.to_vec();
     drop(exprs); //drop mutex lock to release the thread
+    let valid = VALID_EXPRS.lock().unwrap();
     for (idx, exp) in cl_exprs.into_iter().enumerate() {
         let hndlr = mtx.get(exp.expr());
+        if !valid.contains(exp.expr()) {
+            println!("{}", format!("{} is not a valid expression!", exp.expr().bold()).red());
+        }
         if hndlr.is_some() {
             hndlr.unwrap().call_handler(idx, exp)
         }
     }
+    drop(valid);
 }
 
 struct PackedExprHandlerRef {
@@ -116,7 +122,7 @@ impl PackedExprHandlerRef {
         });
         (self.handler_ref)(&mut expr, next_c, get_at, curr.to_owned());
     }
-    pub fn pack(handler_ref: ExprHandler) -> PackedExprHandlerRef {
+    pub fn pack_boxed(handler_ref: ExprHandler) -> PackedExprHandlerRef {
         PackedExprHandlerRef {handler_ref: Arc::new(Box::new(handler_ref))}
     }
 }
@@ -129,7 +135,8 @@ where
     F: Fn(&mut FoundExpr, Option<&FoundExpr>, GetAt, usize) -> () + 'static + Send + Sync
 {
     let mut mtx = HANDLERS.lock().unwrap();
-    let address = format!("{:p}", &handler);
-    println!("[DEBUG]: Registered expression handler for {} (ref: {})", expr_name, address);
-    mtx.insert(expr_name.to_string(), PackedExprHandlerRef::pack(Box::new(handler)));
+    let address = format!("{:p}", &handler).bold();
+    println!("[DEBUG]: Registered expression handler for {} (ref: {})", expr_name.bold(), address);
+    mtx.insert(expr_name.to_string(), PackedExprHandlerRef::pack_boxed(Box::new(handler)));
+    VALID_EXPRS.lock().unwrap().push(expr_name.to_string());
 }
