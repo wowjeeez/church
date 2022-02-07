@@ -1,13 +1,20 @@
-use std::rc::Rc;
 use lazy_static::lazy_static;
 use regex::Regex;
 use crate::commands::compiler::cmd::SourceFile;
 use colored::Colorize;
+use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
+
 lazy_static! {
     static ref EXPR_RE: Regex = Regex::new(r"//s*@church").unwrap();
     static ref INNER_RE: Regex = Regex::new(r"@church-.+").unwrap();
 }
 
+
+
+lazy_static! {
+    static ref HANDLERS: Mutex<HashMap<String, PackedExprHandlerRef>> = Mutex::new(HashMap::new());
+}
 
 pub struct FoundExpr<'t> {
     file: SourceFile<'t>,
@@ -84,4 +91,33 @@ pub fn parse_expr_in_src<'t>(file: &'t mut SourceFile<'t>) -> Vec<FoundExpr<'t>>
         }
     }
     exprs
+}
+
+struct PackedExprHandlerRef {
+    handler_ref: Arc<Box<ExprHandler>>,
+}
+
+impl PackedExprHandlerRef {
+    pub fn call_handler(self: &PackedExprHandlerRef, curr: &'static usize, mut expr: FoundExpr<'static>, exprs: &'static Vec<FoundExpr<'static>>) {
+        let get_next = Box::new(|| exprs.get(curr.clone() + 1));
+        let get_at = Box::new(|idx: usize| exprs.get(idx));
+        (self.handler_ref)(&mut expr, get_next, get_at, curr.to_owned());
+    }
+    pub fn pack(handler_ref: ExprHandler) -> PackedExprHandlerRef {
+        PackedExprHandlerRef {handler_ref: Arc::new(Box::new(handler_ref))}
+    }
+}
+
+type GetAt = Box<dyn Fn(usize) -> Option<&'static FoundExpr<'static>>>;
+type GetNext = Box<dyn Fn() -> Option<&'static FoundExpr<'static>>>;
+type ExprHandler = Box<dyn Fn(&mut FoundExpr, GetNext, GetAt, usize) -> () + 'static + Send + Sync>;
+
+pub fn register_expr_handler<F>(expr_name: &str, handler: F)
+where
+    F: Fn(&mut FoundExpr, GetNext, GetAt, usize) -> () + 'static + Send + Sync
+{
+    let mut mtx = HANDLERS.lock().unwrap();
+    let address = format!("{:p}", &handler);
+    println!("[DEBUG]: Registered expression handler for {} (ref: {})", expr_name, address);
+    mtx.insert(expr_name.to_string(), PackedExprHandlerRef::pack(Box::new(handler)));
 }

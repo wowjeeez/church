@@ -4,6 +4,7 @@ use lazy_static::lazy_static;
 use colored::Colorize;
 use crate::cliparser::{CliInp, remap_shorthands, strip_shorthands};
 use serde::Deserialize;
+use crate::commands::compiler::register_expr_handler;
 
 mod commands;
 mod cliparser;
@@ -85,6 +86,7 @@ pub fn parse_config(p: String) -> Config {
 }
 
 fn main() {
+    register_expr_handler("test" ,|_, _, _, _| {});
     let args: Vec<String> = std::env::args().collect();
     let cmd = args.get(1);
     if cmd.is_none() {

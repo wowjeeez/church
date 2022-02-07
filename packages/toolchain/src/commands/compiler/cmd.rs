@@ -5,6 +5,8 @@ use crate::{CliInp, CmdDescr, Config, parse_config};
 use colored::Colorize;
 use crate::commands::compiler::expr::{FoundExpr, parse_expr_in_src};
 
+
+
 #[derive(Debug, Clone)]
 pub struct SourceFile<'t> {
     pub name: String,
@@ -45,8 +47,4 @@ pub fn compile(cmd: &CmdDescr, args: &CliInp) {
     let cf = &parse_config(cnf_p);
     println!("{}", format!("Compiling: {}", cf.project.underline()).green());
     parse_entry(&cf);
-}
-
-pub fn register_expr_handler(expr_name: &str, handler: fn (expr: &mut FoundExpr) -> ()) {
-
 }
