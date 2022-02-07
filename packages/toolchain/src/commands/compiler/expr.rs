@@ -4,6 +4,12 @@ use crate::commands::compiler::cmd::SourceFile;
 use colored::Colorize;
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
+use std::fmt::Write;
+
+#[cfg(windows)]
+const LINE_ENDING: &'static str = "\r\n";
+#[cfg(not(windows))]
+const LINE_ENDING: &'static str = "\n";
 
 lazy_static! {
     static ref EXPR_RE: Regex = Regex::new(r"//s*@church").unwrap();
@@ -72,8 +78,8 @@ impl FoundExpr {
 
 
 pub fn parse_expr_in_src(file: SourceFile) {
-    let mut last_char_idx: usize = 0;
     let mut exprs = EXPRS.lock().unwrap();
+    let mut curr_parsed = std::string::String::new();
     if EXPR_RE.is_match(file.content.as_str()) {
         for (idx, ln) in file.content.lines().enumerate() {
             if ln.trim().starts_with("//") {
@@ -84,12 +90,13 @@ pub fn parse_expr_in_src(file: SourceFile) {
                         {
                             println!("{}", format!("Found {} Church compiler directive in {} at line {}", expr.bold().underline(), file.rel_path.to_str().unwrap().replace("\\", "/").bold().underline(), idx + 1).yellow());
                         }
-                        let parsed = FoundExpr::new(file.clone(), idx, ent.unwrap()[0].to_string(), expr, last_char_idx);
+                        let parsed = FoundExpr::new(file.clone(), idx, ent.unwrap()[0].to_string(), expr, curr_parsed.len());
                         exprs.push(parsed);
                     }
                 }
             }
-            last_char_idx += ln.len();
+            curr_parsed.write_str(ln);
+            curr_parsed.write_str(LINE_ENDING);
         }
     }
     let mut mtx = HANDLERS.lock().unwrap();

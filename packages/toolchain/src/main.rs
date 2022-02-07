@@ -9,6 +9,8 @@ use crate::commands::compiler::register_expr_handler;
 mod commands;
 mod cliparser;
 
+
+
 pub struct Arg {
     pub name: &'static str,
     pub descr: &'static str,
@@ -75,19 +77,22 @@ pub fn parse_config(p: String) -> Config {
     }
     let file = std::fs::read_to_string(pth);
     if file.is_err() {
-        println!("{}", file.err().unwrap().to_string().red());
+        println!("Error in reading config file: {}", file.err().unwrap().to_string().red());
         exit(0)
     }
     let parsed_struct: Config = serde_json::from_str(file.unwrap().as_str()).unwrap_or_else(|err| {
-        println!("{}", err.to_string().red());
+        println!("Config file parsing error: {}", err.to_string().red());
         exit(0)
     });
     parsed_struct
 }
 
 fn main() {
-    register_expr_handler("test" ,|ex, get_next, _, _| {
-        println!("Handling expression: {}", ex.expr())
+    register_expr_handler("ignore-dev" ,|ex, get_next, _, _| {
+        println!("Handling expression: {}", ex.expr());
+        let idx = ex.get_start_char_idx();
+        let str = &ex.get_file().content[idx..];
+        println!("{}", str);
     });
     let args: Vec<String> = std::env::args().collect();
     let cmd = args.get(1);
