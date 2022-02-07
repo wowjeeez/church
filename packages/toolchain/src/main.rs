@@ -58,7 +58,7 @@ for cmd in COMMANDS.iter() {
     println!("{}", format!("\t{} - Type {} to show information about the command.", cmd.name.yellow(), format!("{} --help", cmd.name).yellow()))
 }
 }
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Config {
     src: String,
     entry: String,
@@ -86,7 +86,9 @@ pub fn parse_config(p: String) -> Config {
 }
 
 fn main() {
-    register_expr_handler("test" ,|_, _, _, _| {});
+    register_expr_handler("test" ,|ex, get_next, _, _| {
+        println!("Handling expression: {}", ex.expr())
+    });
     let args: Vec<String> = std::env::args().collect();
     let cmd = args.get(1);
     if cmd.is_none() {

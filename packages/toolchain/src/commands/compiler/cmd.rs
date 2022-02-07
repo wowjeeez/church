@@ -8,23 +8,23 @@ use crate::commands::compiler::expr::{FoundExpr, parse_expr_in_src};
 
 
 #[derive(Debug, Clone)]
-pub struct SourceFile<'t> {
+pub struct SourceFile {
     pub name: String,
     pub path: PathBuf,
     pub rel_path: PathBuf,
     pub content: String,
-    pub config: &'t Config
+    pub config: Config
 }
-impl<'t> SourceFile<'t> {
-    pub fn write_new(self: &'t mut SourceFile<'t>, text: String) {
+impl SourceFile {
+    pub fn write_new(self: &mut SourceFile, text: String) {
         self.content = text
     }
-    pub fn write(self: &'t SourceFile<'t>) {
+    pub fn write(self: &SourceFile) {
 
     }
 }
 
-fn parse_entry(cf: &Config) {
+fn parse_entry(cf: Config) {
     let mut entry_file = std::path::PathBuf::new();
     entry_file.push(std::env::current_dir().unwrap());
     entry_file.push(&cf.src);
@@ -38,13 +38,13 @@ fn parse_entry(cf: &Config) {
         println!("{}", entry_f.err().unwrap().to_string().red());
         exit(0)
     }
-    let mut src = SourceFile { name: cf.entry.clone(), path: entry_file, content: entry_f.unwrap(), config: &cf, rel_path: std::path::PathBuf::from(&cf.src).join(&cf.entry) };
-    let exprs = parse_expr_in_src(&mut src);
+    let src = SourceFile { name: cf.entry.clone(), path: entry_file, content: entry_f.unwrap(), config: cf.clone(), rel_path: std::path::PathBuf::from(&cf.src).join(&cf.entry) };
+    parse_expr_in_src(src);
 }
 
 pub fn compile(cmd: &CmdDescr, args: &CliInp) {
     let cnf_p = args.get_string_val("config").unwrap_or("church.json".to_string());
-    let cf = &parse_config(cnf_p);
+    let cf = parse_config(cnf_p);
     println!("{}", format!("Compiling: {}", cf.project.underline()).green());
-    parse_entry(&cf);
+    parse_entry(cf.clone());
 }

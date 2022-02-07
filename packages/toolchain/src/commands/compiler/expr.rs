@@ -14,16 +14,17 @@ lazy_static! {
 
 lazy_static! {
     static ref HANDLERS: Mutex<HashMap<String, PackedExprHandlerRef>> = Mutex::new(HashMap::new());
+    static ref EXPRS: Mutex<Vec<FoundExpr>> = Mutex::new(Vec::new());
 }
-
-pub struct FoundExpr<'t> {
-    file: SourceFile<'t>,
+#[derive(Clone)]
+pub struct FoundExpr {
+    file: SourceFile,
     line: usize,
     raw_expr: String,
     parsed_expr: String,
     char_idx: usize
 }
-impl<'t> FoundExpr<'t> {
+impl FoundExpr {
     pub fn new(file: SourceFile, line: usize, raw_expr: String, parsed_expr: String, char_idx: usize) -> FoundExpr {
         FoundExpr {
             file,
@@ -33,10 +34,10 @@ impl<'t> FoundExpr<'t> {
             char_idx
         }
     }
-    pub fn get_line(self: &'t FoundExpr<'t>) -> String {
+    pub fn get_line(self: &FoundExpr) -> String {
         self.file.content.lines().nth(self.line).unwrap().to_string()
     }
-    pub fn get_line_by_idx(self: &'t FoundExpr<'t>, ln: usize) -> Option<String> {
+    pub fn get_line_by_idx(self: &FoundExpr, ln: usize) -> Option<String> {
         let ln = self.file.content.lines().nth(ln);
         return if ln.is_some() {
             Some(ln.unwrap().to_string())
@@ -44,34 +45,34 @@ impl<'t> FoundExpr<'t> {
             None
         }
     }
-    pub fn get_file(self: &'t FoundExpr<'t>) -> &'t SourceFile {
+    pub fn get_file(self: &FoundExpr) -> &SourceFile {
         &self.file
     }
-    pub fn raw_expr(self: &'t FoundExpr<'t>) -> &'t String {
+    pub fn raw_expr(self: &FoundExpr) -> &String {
         &self.raw_expr
     }
-    pub fn expr(self: &'t FoundExpr<'t>) -> &'t String {
+    pub fn expr(self: &FoundExpr) -> &String {
         &self.parsed_expr
     }
-    pub fn get_src_after_expr(self: &'t FoundExpr<'t>) -> String {
+    pub fn get_src_after_expr(self: &FoundExpr) -> String {
         let res: Vec<String> = self.file.content.lines().map(|l| l.to_string()).collect();
         let s = &res[self.line + 1..].join("");
         s.to_owned().trim().to_string()
     }
-    pub fn get_start_char_idx(self: &'t FoundExpr<'t>) -> usize {
+    pub fn get_start_char_idx(self: &FoundExpr) -> usize {
         self.char_idx
     }
 
-    pub fn get_after_char_idx(self: &'t FoundExpr<'t>) -> String {
+    pub fn get_after_char_idx(self: &FoundExpr) -> String {
         self.file.content[self.char_idx..].to_string().trim().to_string()
     }
 
 }
 
 
-pub fn parse_expr_in_src<'t>(file: &'t mut SourceFile<'t>) -> Vec<FoundExpr<'t>> {
-    let mut exprs: Vec<FoundExpr<'t>> = vec![];
+pub fn parse_expr_in_src(file: SourceFile) {
     let mut last_char_idx: usize = 0;
+    let mut exprs = EXPRS.lock().unwrap();
     if EXPR_RE.is_match(file.content.as_str()) {
         for (idx, ln) in file.content.lines().enumerate() {
             if ln.trim().starts_with("//") {
@@ -90,7 +91,15 @@ pub fn parse_expr_in_src<'t>(file: &'t mut SourceFile<'t>) -> Vec<FoundExpr<'t>>
             last_char_idx += ln.len();
         }
     }
-    exprs
+    let mut mtx = HANDLERS.lock().unwrap();
+    let cl_exprs = exprs.to_vec();
+    drop(exprs); //drop mutex lock to release the thread
+    for (idx, exp) in cl_exprs.into_iter().enumerate() {
+        let hndlr = mtx.get(exp.expr());
+        if hndlr.is_some() {
+            hndlr.unwrap().call_handler(idx, exp)
+        }
+    }
 }
 
 struct PackedExprHandlerRef {
@@ -98,23 +107,26 @@ struct PackedExprHandlerRef {
 }
 
 impl PackedExprHandlerRef {
-    pub fn call_handler(self: &PackedExprHandlerRef, curr: &'static usize, mut expr: FoundExpr<'static>, exprs: &'static Vec<FoundExpr<'static>>) {
-        let get_next = Box::new(|| exprs.get(curr.clone() + 1));
-        let get_at = Box::new(|idx: usize| exprs.get(idx));
-        (self.handler_ref)(&mut expr, get_next, get_at, curr.to_owned());
+    pub fn call_handler(self: &PackedExprHandlerRef, curr: usize, mut expr: FoundExpr) {
+        let vec = EXPRS.lock().unwrap();
+        let next_c = vec.get(curr + 1);
+        let get_at = Box::new(|idx: usize| {
+            let uw = EXPRS.lock().unwrap();
+            uw.get(idx).cloned()
+        });
+        (self.handler_ref)(&mut expr, next_c, get_at, curr.to_owned());
     }
     pub fn pack(handler_ref: ExprHandler) -> PackedExprHandlerRef {
         PackedExprHandlerRef {handler_ref: Arc::new(Box::new(handler_ref))}
     }
 }
 
-type GetAt = Box<dyn Fn(usize) -> Option<&'static FoundExpr<'static>>>;
-type GetNext = Box<dyn Fn() -> Option<&'static FoundExpr<'static>>>;
-type ExprHandler = Box<dyn Fn(&mut FoundExpr, GetNext, GetAt, usize) -> () + 'static + Send + Sync>;
+type GetAt<'t> = Box<dyn Fn(usize) -> Option<FoundExpr>>;
+type ExprHandler = Box<dyn Fn(&mut FoundExpr, Option<&FoundExpr>, GetAt, usize) -> () + 'static + Send + Sync>;
 
 pub fn register_expr_handler<F>(expr_name: &str, handler: F)
 where
-    F: Fn(&mut FoundExpr, GetNext, GetAt, usize) -> () + 'static + Send + Sync
+    F: Fn(&mut FoundExpr, Option<&FoundExpr>, GetAt, usize) -> () + 'static + Send + Sync
 {
     let mut mtx = HANDLERS.lock().unwrap();
     let address = format!("{:p}", &handler);
