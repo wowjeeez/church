@@ -1,5 +1,5 @@
 //comment
-const taso = "sexy"
+const taso = "sexy\nhello"
 
 print()
 

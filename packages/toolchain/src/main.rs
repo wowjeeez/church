@@ -5,7 +5,6 @@ use lazy_static::lazy_static;
 use colored::Colorize;
 use crate::cliparser::{CliInp, remap_shorthands, strip_shorthands};
 use serde::Deserialize;
-use crate::commands::compiler::register_expr_handler;
 
 mod commands;
 mod cliparser;
@@ -40,7 +39,7 @@ impl CmdDescr {
 lazy_static! {
  static ref COMMANDS: [CmdDescr; 1] = [CmdDescr {
     name: "compile",
-    aliases: vec!["c"],
+    aliases: vec!["build"],
     arguments: vec![Arg {name: "config", short_hands: vec!["c"], descr: "The path to church.json"}],
     handler: commands::compiler::compile,
     descr: "Compile a Church project"
@@ -66,7 +65,8 @@ pub struct Config {
     src: String,
     entry: String,
     context: String,
-    project: String
+    project: String,
+    javascript: String
 }
 
 pub fn parse_config(p: String) -> Config {
@@ -89,7 +89,6 @@ pub fn parse_config(p: String) -> Config {
 }
 
 fn main() {
-    commands::compiler::expressions::register();
 
     let args: Vec<String> = std::env::args().collect();
     let cmd = args.get(1);

@@ -4,7 +4,6 @@ use std::path::PathBuf;
 use std::process::exit;
 use crate::{CliInp, CmdDescr, Config, parse_config};
 use colored::Colorize;
-use crate::commands::compiler::expr::{FoundExpr, parse_expr_in_src};
 
 
 
@@ -48,7 +47,6 @@ fn parse_entry(cf: Config) {
         exit(0)
     }
     let src = SourceFile { name: cf.entry.clone(), path: entry_file, content: entry_f.unwrap(), config: cf.clone(), rel_path: std::path::PathBuf::from(&cf.src).join(&cf.entry) };
-    parse_expr_in_src(src);
 }
 
 pub fn compile(cmd: &CmdDescr, args: &CliInp) {

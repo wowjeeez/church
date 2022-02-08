@@ -2,5 +2,6 @@
   "src": "test",
   "entry": "index.ts",
   "context": "server",
-  "project": "Test Church project"
+  "project": "Test Church project",
+  "javascript": true
 }
