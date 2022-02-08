@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::process::exit;
 use lazy_static::lazy_static;
 use colored::Colorize;
@@ -88,12 +89,8 @@ pub fn parse_config(p: String) -> Config {
 }
 
 fn main() {
-    register_expr_handler("ignore-dev" ,|ex, get_next, _, _| {
-        println!("Handling expression: {}", ex.expr());
-        let idx = ex.get_start_char_idx();
-        let str = &ex.get_file().content[idx..];
-        println!("{}", str);
-    });
+    commands::compiler::expressions::register();
+
     let args: Vec<String> = std::env::args().collect();
     let cmd = args.get(1);
     if cmd.is_none() {
@@ -110,4 +107,8 @@ fn main() {
     let remapped_args = remap_shorthands(&args, obtained_cmd.unwrap().shorthands_as_hash());
     let parsed_args = CliInp::from_vec(strip_shorthands(&remapped_args));
     (obtained_cmd.unwrap().handler)(&obtained_cmd.unwrap(), &parsed_args);
+}
+
+pub fn fmt_pth(pth: &PathBuf) -> String {
+    return pth.to_str().unwrap().replace("\\", "/")
 }

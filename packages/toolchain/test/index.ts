@@ -1,5 +1,14 @@
-const bad_string = "hello \n ok"
-//@church-test
-const test_str = "hello\n"
-//@church-ignore-dev
-const toIgnore = 10;
+//comment
+const taso = "sexy"
+
+print()
+
+//@church-ignore-prod-start
+const ignore = {
+    val1: true,
+    val2: false,
+    hello: {
+        rec: true
+    }
+}
+//@church-ignore-prod-end
