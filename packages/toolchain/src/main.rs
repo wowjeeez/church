@@ -61,10 +61,12 @@ for cmd in COMMANDS.iter() {
 }
 }
 
-fn default_as_false() -> bool {
+fn r#false() -> bool {
     false
 }
-
+fn r#true() -> bool {
+true
+}
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
@@ -72,8 +74,11 @@ pub struct Config {
     entry: String,
     context: String,
     project: String,
-    #[serde(default="default_as_false")]
-    javascript: bool
+    #[serde(default="r#false")]
+    javascript: bool,
+    #[serde(default="r#true")]
+    _repl_log_impl: bool,
+    r#type: String
 }
 
 pub fn parse_config(p: String) -> Config {

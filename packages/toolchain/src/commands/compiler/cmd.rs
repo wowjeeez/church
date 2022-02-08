@@ -53,7 +53,8 @@ fn handle_file(cf: &Config, fp: PathBuf) {
     let pwd = std::env::current_dir().unwrap();
     let rel = fmt_pth(&PathBuf::from(fp.to_str().unwrap().replace(pwd.to_str().unwrap(), "")));
     let modif = repl_logs_with_ctx(&cf.context, !cf.javascript, f_c, rel);
-    fs::write(&fp, modif);
+    let r#final = format!(r#"exports("__CHRCH__GET_TYPE", () => "{}")"#, cf.r#type);
+    fs::write(&fp, r#final + "\n" + &*modif);
 }
 
 fn parse_dirs(cf: Config) {

@@ -3,5 +3,6 @@
   "entry": "index.ts",
   "context": "server",
   "project": "Test Church project",
-  "javascript": false
+  "javascript": false,
+  "type": "core"
 }
