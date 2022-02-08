@@ -12,3 +12,6 @@ const ignore = {
     }
 }
 //@church-ignore-prod-end
+const debug = (ok: string) => {}
+info("hello", ...[...arr])
+debug("ok")

@@ -60,13 +60,20 @@ for cmd in COMMANDS.iter() {
     println!("{}", format!("\t{} - Type {} to show information about the command.", cmd.name.yellow(), format!("{} --help", cmd.name).yellow()))
 }
 }
+
+fn default_as_false() -> bool {
+    false
+}
+
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct Config {
     src: String,
     entry: String,
     context: String,
     project: String,
-    javascript: String
+    #[serde(default="default_as_false")]
+    javascript: bool
 }
 
 pub fn parse_config(p: String) -> Config {
