@@ -15,7 +15,7 @@ fn does_file_define_custom_log_impl(r#for: &String, src: &String) -> bool {
 }
 pub fn repl_logs_with_ctx(context: &String, is_ts: bool, src: String, rel_p: String) -> String {
     let import_st = if is_ts {
-        format!(r#"import {{log as __CHRCH_LOG}} from "@church/{}"#, context)
+        format!(r#"import {{log as __CHRCH_LOG}} from "@church/{}""#, context)
     } else {
         format!(r#"const __CHRCH_LOG = require("@church/{}").log"#, context)
     };
