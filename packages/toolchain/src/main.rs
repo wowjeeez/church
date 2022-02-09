@@ -37,12 +37,12 @@ impl CmdDescr {
 }
 
 lazy_static! {
- static ref COMMANDS: [CmdDescr; 1] = [CmdDescr {
+ static ref COMMANDS: Vec<CmdDescr> = vec![CmdDescr {
     name: "compile",
     aliases: vec!["build"],
     arguments: vec![Arg {name: "config", short_hands: vec!["c"], descr: "The path to church.json"}],
     handler: commands::compiler::compile,
-    descr: "Compile a Church project"
+    descr: "Compile a Church project/resource."
 }];
 }
 
@@ -99,7 +99,17 @@ pub fn parse_config(p: String) -> Config {
     });
     parsed_struct
 }
+pub fn print_help(cmd: &CmdDescr) {
+    println!("{}", format!("{} {} (aliases: {})", "Command:".underline(), cmd.name.yellow(), cmd.aliases.join(", ").yellow()));
+    println!("{}", cmd.descr.bold());
+    println!();
+    println!("{}", "Arguments:".underline());
+    for arg in &cmd.arguments {
+        println!("\t--{}: {}", arg.name.underline().bold().yellow(), arg.descr.dimmed())
+    }
+    exit(0)
 
+}
 fn main() {
 
     let args: Vec<String> = std::env::args().collect();
@@ -117,7 +127,12 @@ fn main() {
     }
     let remapped_args = remap_shorthands(&args, obtained_cmd.unwrap().shorthands_as_hash());
     let parsed_args = CliInp::from_vec(strip_shorthands(&remapped_args));
-    (obtained_cmd.unwrap().handler)(&obtained_cmd.unwrap(), &parsed_args);
+    if parsed_args.get_bool_flag("help") {
+        let cm = obtained_cmd.unwrap();
+        print_help(&cm);
+    } else {
+        (obtained_cmd.unwrap().handler)(&obtained_cmd.unwrap(), &parsed_args);
+    }
 }
 
 pub fn fmt_pth(pth: &PathBuf) -> String {

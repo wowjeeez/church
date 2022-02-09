@@ -17,6 +17,8 @@ impl CliInp {
                     if val.starts_with("--") {
                         return true
                     }
+                } else {
+                    return true
                 }
             }
         }

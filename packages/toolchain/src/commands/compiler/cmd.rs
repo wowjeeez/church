@@ -1,3 +1,4 @@
+use std::borrow::BorrowMut;
 use std::fs;
 use std::path::{PathBuf};
 use std::process::exit;
@@ -48,13 +49,17 @@ fn parse_entry(cf: Config) {
     let src = SourceFile { name: cf.entry.clone(), path: entry_file, content: entry_f.unwrap(), config: cf.clone(), rel_path: std::path::PathBuf::from(&cf.src).join(&cf.entry) };
 }
 
-fn handle_file(cf: &Config, fp: PathBuf) {
+fn handle_file(cf: &Config, fp: PathBuf, entry: bool) {
     let f_c = fs::read_to_string(&fp).unwrap();
     let pwd = std::env::current_dir().unwrap();
     let rel = fmt_pth(&PathBuf::from(fp.to_str().unwrap().replace(pwd.to_str().unwrap(), "")));
     let modif = repl_logs_with_ctx(&cf.context, !cf.javascript, f_c, rel);
     let r#final = format!(r#"exports("__CHRCH__GET_TYPE", () => "{}")"#, cf.r#type);
-    fs::write(&fp, r#final + "\n" + &*modif);
+    if entry {
+        fs::write(&fp, r#final + "\n" + &*modif);
+    } else {
+        fs::write(&fp, modif);
+    }
 }
 
 fn parse_dirs(cf: Config) {
@@ -63,7 +68,7 @@ fn parse_dirs(cf: Config) {
         println!("{}", format!("{} doesn't exist.", src_dir.to_str().unwrap()).red());
         exit(0);
     }
-    let dirs = walkdir::WalkDir::new(src_dir);
+    let dirs = walkdir::WalkDir::new(&src_dir);
     let ts_proj = !cf.javascript;
     for f in dirs.into_iter().filter(|w| w.is_ok()).map(|w| w.unwrap()) {
         if f.metadata().unwrap().is_file() {
@@ -74,7 +79,8 @@ fn parse_dirs(cf: Config) {
                 println!("{}", format!("{} files found in a JavaScript project. This is bad, add: {} to your church.json.", ".ts".bold(), r#""javascript: false""#.bold()).red());
                 exit(0);
             }
-            handle_file(&cf, f.path().to_path_buf());
+            let is_entry = f.path().eq(&(&mut src_dir.clone()).join(&cf.entry));
+            handle_file(&cf, f.path().to_path_buf(), is_entry);
         }
     }
 

@@ -1,3 +1,7 @@
+exports("__CHRCH__GET_TYPE", () => "core")
+exports("__CHRCH__GET_TYPE", () => "core")
+exports("__CHRCH__GET_TYPE", () => "core")
+import {log as __CHRCH_LOG} from "@church/server
 //comment
 const taso = "sexy\nhello"
 
@@ -13,5 +17,5 @@ const ignore = {
 }
 //@church-ignore-prod-end
 const debug = (ok: string) => {}
-info("hello", ...[...arr])
+__CHRCH_LOG({level: "info", location: "/test/index.ts", async: true}, "hello", ...[...arr])
 debug("ok")
