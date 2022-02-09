@@ -1,10 +1,12 @@
-const handlersWithState: Record<string, { registeredListenerRef?: Function, handlers: Function[], state: Record<string, any>, stateListeners: {onKeys: string[], handler: Function}[]}> = {}
+import {createFiber, Fiber, StateUpdate} from "./fiber";
+
+const handlersWithState: Record<string, { registeredListenerRef?: Function, handlers: Function[], state: Fiber<any>}> = {}
 const handlersWithoutState: Record<string, { registeredListenerRef?: Function, handlers: Function[] }> = {}
 
 const init = (name: string, dumb: boolean) => {
     if (!dumb) {
         if (!handlersWithState[name]) {
-            handlersWithState[name] = {handlers: [], state: {}, stateListeners: []}
+            handlersWithState[name] = {handlers: [], state: createFiber(`_EVST_${name}`, false, false)}
         }
     } else {
         if (!handlersWithoutState[name]) {
@@ -51,17 +53,9 @@ function unregisterEventHandler(name: string, idx: number, dumb: boolean) {
 /**
  * Event handler with state
  */
-export function useNetEvent<T extends unknown>(eventName: string, handler: (state: State, payload: T) => void) {
+export function useNetEvent<T extends unknown, State extends Record<string, any>>(eventName: string, handler: (state: State, payload: T) => void) {
     init(eventName, false)
-    const wrappedState = (src: number): State => ({
-        attach: (key: string, value: any) => {
-            handlersWithState[eventName].state[key] = value
-            handlersWithState[eventName].stateListeners.filter(val => !val.onKeys.length || val.onKeys.includes(key)).map(v => v.handler(key, value))
-        },
-        onChange: (handler: Function, onKeys: string[] = []) => handlersWithState[eventName].stateListeners.push({handler, onKeys}),
-        getVal: <T>(key: string) => handlersWithState[eventName].state[key] as T,
-        src: () => src
-    })
+    const wrappedState = (src: number): Fiber<State> & {"src": () => number} => ({...handlersWithState[eventName].state, src: () => src})
     if (!handlersWithState[eventName].registeredListenerRef) {
         const handler = (payload: any) => {
             const state = wrappedState(source)
